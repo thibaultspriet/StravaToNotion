@@ -1,19 +1,18 @@
 """Define the lambda function handler 'controller'."""
-import json
 import logging
 import os
-from datetime import datetime
 from typing import Any
 
 import boto3
 
-from src.aws_lambda.event import Event
+from src.handlers.strava_subscription import callback_validation
+from src.types.event import HttpEvent
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def controller(event: Event, context: dict[str, Any]) -> Any:
+def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
     """
     AWS Lambda Function handler.
 
@@ -36,13 +35,19 @@ def controller(event: Event, context: dict[str, Any]) -> Any:
     method = _http_info["method"]
     path = _http_info["path"]
 
-    if (method == "POST") & (path == "/append_queue"):
-        now = f"{datetime.now()}"
+    if (method == "GET") & (path == "/hello_athlete"):
+        return "hello athlete"
+    elif (method == "GET") & (path == "/strava_callback"):
+        strava_verify_token = os.environ.get("VERIFY_TOKEN")
+        if strava_verify_token is None:
+            raise RuntimeError("environment variable 'VERIFY_TOKEN' not set")
+        return callback_validation(event["queryStringParameters"], strava_verify_token)
+    elif (method == "POST") & (path == "/strava_callback"):
+        message_body = event["body"]
         sqs = boto3.client("sqs")
         sqs.send_message(
-            QueueUrl=os.environ["SQS_URL"], MessageBody=now, MessageGroupId="1"
+            QueueUrl=os.environ["SQS_URL"], MessageBody=message_body, MessageGroupId="1"
         )
-        return {"statusCode": 200, "body": json.dumps(now)}
-
+        return {"statusCode": 200, "body": message_body}
     else:
         raise RuntimeError(f"path {path} not implemented")
