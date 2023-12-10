@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  unit test:
+  unittest:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -27,7 +27,7 @@ jobs:
           poetry run pytest test/
 
   deploy lambda:
-    needs: [unit test]
+    needs: [unittest]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
