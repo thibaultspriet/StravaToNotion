@@ -44,7 +44,7 @@ jobs:
         cd dependencies; zip -r ../deployment_package.zip .
     - name: Build source code
       run: |
-        zip -FSr deployment_package.zip ./src
+        zip -r deployment_package.zip ./src
         zip deployment_package.zip lambda_function.py
         zip deployment_package.zip lambda_process_events.py
     - name: Configure AWS Credentials
