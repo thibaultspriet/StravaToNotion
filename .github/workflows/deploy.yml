@@ -1,0 +1,59 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Deploy Lambda functions
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  unit test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.11"
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Install dependencies
+      run: poetry install --no-interaction --no-root --with=test
+    - name: Run tests
+      run: |
+          poetry run pytest test/
+
+  deploy lambda:
+    needs: [unit test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.11"
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Build dependencies
+      run: |
+        poetry export -f requirements.txt --without-hashes --without-urls -o requirements.txt
+	    pip install --target ./dependencies -r requirements.txt
+	    cd dependencies; zip -r ../deployment_package.zip .
+    - name: Build source code
+      run: |
+        zip -FSr deployment_package.zip ./src
+	    zip deployment_package.zip lambda_function.py
+	    zip deployment_package.zip lambda_process_events.py
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-north-1
+    - name: Deploy Lambda functions
+      run: |
+        aws lambda update-function-code --function-name strava_webhook --zip-file fileb://deployment_package.zip --no-cli-pager
+        aws lambda update-function-code --function-name process_events --zip-file fileb://deployment_package.zip --no-cli-pager
