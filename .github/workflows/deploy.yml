@@ -40,13 +40,13 @@ jobs:
     - name: Build dependencies
       run: |
         poetry export -f requirements.txt --without-hashes --without-urls -o requirements.txt
-	    pip install --target ./dependencies -r requirements.txt
-	    cd dependencies; zip -r ../deployment_package.zip .
+        pip install --target ./dependencies -r requirements.txt
+        cd dependencies; zip -r ../deployment_package.zip .
     - name: Build source code
       run: |
         zip -FSr deployment_package.zip ./src
-	    zip deployment_package.zip lambda_function.py
-	    zip deployment_package.zip lambda_process_events.py
+        zip deployment_package.zip lambda_function.py
+        zip deployment_package.zip lambda_process_events.py
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
