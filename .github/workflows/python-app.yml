@@ -5,7 +5,6 @@ name: Python application
 
 on:
   push:
-    branches: [ "master" ]
 
 permissions:
   contents: read
@@ -21,6 +20,8 @@ jobs:
         python-version: "3.11"
     - name: Install Poetry
       uses: snok/install-poetry@v1
+    - name: Install dependencies
+      run: poetry install --no-interaction --no-root --with=test
     - name: Run tests
       run: |
           poetry run pytest test/
