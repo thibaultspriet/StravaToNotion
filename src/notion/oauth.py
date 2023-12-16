@@ -1,4 +1,6 @@
 """Handle the OAuth flow of Notion to allow access to the public integration."""
+import base64
+
 import requests
 
 
@@ -15,11 +17,15 @@ def exchange_token(
     :return:
     """
     url = "https://api.notion.com/v1/oauth/token"
-    headers = {"Content-Type": "application/json"}
+    credentials = f"{client_id}:{client_secret}"
+    credentials = base64.b64encode(credentials.encode("ascii")).decode("ascii")
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Basic {credentials}",
+    }
     body = {
         "grant_type": "authorization_code",
-        "client_id": client_id,
-        "client_secret": client_secret,
         "code": code,
         "redirect_uri": redirect_uri,
     }
