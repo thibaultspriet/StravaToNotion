@@ -14,7 +14,7 @@ def exchange_token(
     :param redirect_uri:
     :return:
     """
-    url = "https://www.notion.so/v1/oauth/token"
+    url = "https://api.notion.com/v1/oauth/token"
     headers = {"Content-Type": "application/json"}
     body = {
         "grant_type": "authorization_code",
