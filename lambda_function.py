@@ -1,4 +1,5 @@
 """Define the lambda function handler 'controller'."""
+import json
 import logging
 import os
 from typing import Any
@@ -6,6 +7,7 @@ from typing import Any
 import boto3
 
 from src.handlers.strava_subscription import callback_validation
+from src.notion.oauth import exchange_token
 from src.types.event import HttpEvent
 
 logger = logging.getLogger()
@@ -49,5 +51,19 @@ def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
             QueueUrl=os.environ["SQS_URL"], MessageBody=message_body, MessageGroupId="1"
         )
         return {"statusCode": 200, "body": message_body}
+    elif (method == "POST") & (path == "/notion_oauth_token"):
+        client_id = os.environ["NOTION_CLIENT_ID"]
+        client_secret = os.environ["NOTION_CLIENT_SECRET"]
+        redirect_uri = os.environ["NOTION_CLIENT_REDIRECT_URI"]
+
+        code = json.loads(event["body"])["code"]
+
+        return exchange_token(
+            code=code,
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
+        )
+
     else:
         raise RuntimeError(f"path {path} not implemented")

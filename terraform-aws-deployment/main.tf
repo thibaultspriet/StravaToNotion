@@ -43,6 +43,21 @@ variable "STRAVA_CLIENT_SECRET" {
   type        = string
 }
 
+variable "NOTION_CLIENT_ID" {
+  description = "client id of Notion integration"
+  type        = string
+}
+
+variable "NOTION_CLIENT_SECRET" {
+  description = "client secret of Notion integration"
+  type        = string
+}
+
+variable "NOTION_CLIENT_REDIRECT_URI" {
+  description = "Notion redirect URI of integration"
+  type        = string
+}
+
 variable "lambda_function_name" {
   description = "lambda function name of Strava callback"
   default     = "strava_webhook"
@@ -137,6 +152,9 @@ resource "aws_lambda_function" "test_lambda" {
     variables = {
       VERIFY_TOKEN = var.VERIFY_TOKEN,
       SQS_URL      = aws_sqs_queue.terraform_queue.url
+      NOTION_CLIENT_ID = var.NOTION_CLIENT_ID
+      NOTION_CLIENT_SECRET = var.NOTION_CLIENT_SECRET
+      NOTION_CLIENT_REDIRECT_URI = var.NOTION_CLIENT_REDIRECT_URI
     }
   }
 }
