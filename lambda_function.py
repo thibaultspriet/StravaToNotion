@@ -58,12 +58,16 @@ def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
 
         code = json.loads(event["body"])["code"]
 
-        return exchange_token(
+        res = exchange_token(
             code=code,
             client_id=client_id,
             client_secret=client_secret,
             redirect_uri=redirect_uri,
         )
+
+        logger.info(res)
+
+        return res
 
     else:
         raise RuntimeError(f"path {path} not implemented")

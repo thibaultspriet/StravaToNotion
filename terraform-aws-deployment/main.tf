@@ -150,10 +150,10 @@ resource "aws_lambda_function" "test_lambda" {
 
   environment {
     variables = {
-      VERIFY_TOKEN = var.VERIFY_TOKEN,
-      SQS_URL      = aws_sqs_queue.terraform_queue.url
-      NOTION_CLIENT_ID = var.NOTION_CLIENT_ID
-      NOTION_CLIENT_SECRET = var.NOTION_CLIENT_SECRET
+      VERIFY_TOKEN               = var.VERIFY_TOKEN,
+      SQS_URL                    = aws_sqs_queue.terraform_queue.url
+      NOTION_CLIENT_ID           = var.NOTION_CLIENT_ID
+      NOTION_CLIENT_SECRET       = var.NOTION_CLIENT_SECRET
       NOTION_CLIENT_REDIRECT_URI = var.NOTION_CLIENT_REDIRECT_URI
     }
   }
@@ -162,6 +162,15 @@ resource "aws_lambda_function" "test_lambda" {
 resource "aws_lambda_function_url" "test_latest" {
   function_name      = aws_lambda_function.test_lambda.function_name
   authorization_type = "NONE"
+
+  cors {
+    allow_credentials = true
+    allow_origins     = ["*"]
+    allow_methods     = ["*"]
+    allow_headers     = ["date", "keep-alive"]
+    expose_headers    = ["keep-alive", "date"]
+    max_age           = 86400
+  }
 }
 
 # This is to optionally manage the CloudWatch Log Group for the Lambda Function.
