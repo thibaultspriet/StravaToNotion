@@ -33,3 +33,15 @@ class MissingEnvironmentVariable(InternalException):
         :param env_variable:
         """
         super().__init__(f"environment variable '{env_variable}' is not set.")
+
+
+class NoSharedPage(InternalException):
+    """Raised if any page is shared with the Notion integration."""
+
+    def __init__(self, bot_id: str):
+        """
+        Init instance.
+
+        :param bot_id:
+        """
+        super().__init__(f"Integration of bot_id : {bot_id} is shared with any page.")

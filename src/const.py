@@ -143,3 +143,31 @@ NOTION_DATABASE_PROPERTIES_TEMPLATE = Template(
 )
 
 NOTION_DATABASE_ACTIVITY_ID = "Activity ID"
+
+NOTION_DATABASE_SCHEMA = {
+    "External ID": {"rich_text": {}},
+    "Type": {
+        "select": {
+            "options": [
+                {"name": "Run", "color": "yellow"},
+                {"name": "Ride", "color": "red"},
+                {"name": "Swim", "color": "brown"},
+                {"name": "VirtualRide", "color": "orange"},
+            ]
+        }
+    },
+    "Total Elevation Gain": {"number": {"format": "number"}},
+    "Upload ID": {"rich_text": {}},
+    "Start": {"date": {}},
+    "Activity ID": {"rich_text": {}},
+    "Calories": {"number": {"format": "number"}},
+    "Distance": {"number": {"format": "number"}},
+    "AVG Speed": {"number": {"format": "number"}},
+    "Description": {"rich_text": {}},
+    "Distance (km)": {"formula": {"expression": 'round(prop("Distance")/100)/10'}},
+    "Max Speed": {"number": {"format": "number"}},
+    "Time (min)": {"formula": {"expression": 'round(prop("Time")/60)'}},
+    "Time": {"number": {"format": "number"}},
+    "AVG Speed (km/h)": {"formula": {"expression": 'round(prop("AVG Speed")*3.6)'}},
+    "Name": {"title": {}},
+}

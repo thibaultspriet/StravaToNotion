@@ -142,6 +142,7 @@ resource "aws_lambda_function" "test_lambda" {
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "lambda_function.controller"
   runtime       = "python3.11"
+  timeout       = 30
 
   depends_on = [
     aws_iam_role_policy_attachment.lambda_logs,
@@ -150,11 +151,16 @@ resource "aws_lambda_function" "test_lambda" {
 
   environment {
     variables = {
-      VERIFY_TOKEN               = var.VERIFY_TOKEN,
-      SQS_URL                    = aws_sqs_queue.terraform_queue.url
-      NOTION_CLIENT_ID           = var.NOTION_CLIENT_ID
-      NOTION_CLIENT_SECRET       = var.NOTION_CLIENT_SECRET
-      NOTION_CLIENT_REDIRECT_URI = var.NOTION_CLIENT_REDIRECT_URI
+      VERIFY_TOKEN                        = var.VERIFY_TOKEN,
+      SQS_URL                             = aws_sqs_queue.terraform_queue.url
+      NOTION_CLIENT_ID                    = var.NOTION_CLIENT_ID
+      NOTION_CLIENT_SECRET                = var.NOTION_CLIENT_SECRET
+      NOTION_CLIENT_REDIRECT_URI          = var.NOTION_CLIENT_REDIRECT_URI
+      AIRTABLE_PAT                        = var.AIRTABLE_PAT
+      AIRTABLE_BASE_ID                    = var.AIRTABLE_BASE_ID
+      AIRTABLE_TABLE_STRAVA_ID            = var.AIRTABLE_TABLE_STRAVA_ID
+      AIRTABLE_TABLE_REL_STRAVA_NOTION_ID = var.AIRTABLE_TABLE_REL_STRAVA_NOTION_ID
+      AIRTABLE_TABLE_NOTION               = var.AIRTABLE_TABLE_NOTION
     }
   }
 }
@@ -169,7 +175,7 @@ resource "aws_lambda_function_url" "test_latest" {
     allow_methods     = ["*"]
     allow_headers     = ["date", "keep-alive"]
     expose_headers    = ["keep-alive", "date"]
-    max_age           = 86400
+    max_age           = 0
   }
 }
 

@@ -2,8 +2,9 @@
 import json
 import logging
 
-from src.const import NOTION_DATABASE_PROPERTIES_TEMPLATE
+from src.const import NOTION_DATABASE_PROPERTIES_TEMPLATE, NOTION_DATABASE_SCHEMA
 from src.database.interface import DatabaseInterface
+from src.notion.client import Client as NotionClient
 from src.strava.client import Client as StravaClient
 
 logger = logging.getLogger()
@@ -55,3 +56,20 @@ def strava_activity_to_notion_properties(activity: dict) -> dict:
     }
 
     return json.loads(NOTION_DATABASE_PROPERTIES_TEMPLATE.substitute(**mapping))
+
+
+def create_notion_database(notion_client: NotionClient, parent_id: str) -> str:
+    """
+    Create the Strava activities database.
+
+    :param notion_client:
+    :param parent_id:
+    :return:
+    """
+    parent = {"type": "page_id", "page_id": parent_id}
+    title = [{"type": "text", "text": {"content": "StravaToNotion"}}]
+
+    new_db_id = notion_client.create_database(parent, title, NOTION_DATABASE_SCHEMA)[
+        "id"
+    ]
+    return new_db_id

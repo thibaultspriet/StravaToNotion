@@ -6,6 +6,8 @@ from typing import Any
 
 import boto3
 
+from src.database.airtable import AirtableDatabase
+from src.handlers.oauth import add_or_update_user
 from src.handlers.strava_subscription import callback_validation
 from src.notion.oauth import exchange_token
 from src.types.event import HttpEvent
@@ -55,19 +57,19 @@ def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
         client_id = os.environ["NOTION_CLIENT_ID"]
         client_secret = os.environ["NOTION_CLIENT_SECRET"]
         redirect_uri = os.environ["NOTION_CLIENT_REDIRECT_URI"]
-
         code = json.loads(event["body"])["code"]
-
         res = exchange_token(
             code=code,
             client_id=client_id,
             client_secret=client_secret,
             redirect_uri=redirect_uri,
         )
-
         logger.info(res)
-
         return res
-
+    elif (method == "POST") & (path == "/add_user"):
+        oauth_credentials = json.loads(event["body"])
+        logger.info(oauth_credentials)
+        db = AirtableDatabase()
+        add_or_update_user(oauth_credentials, db)
     else:
         raise RuntimeError(f"path {path} not implemented")

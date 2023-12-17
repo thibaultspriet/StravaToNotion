@@ -1,10 +1,12 @@
 """Concrete implementation of database with airtable."""
+import json
 import os
 
 from src.airtable.client import Client
 from src.airtable.types import Record
 from src.database.interface import DatabaseInterface
 from src.types.database import StravaToken
+from src.types.oauth import NotionCredentials, OauthCredentials, StravaCredentials
 from src.utils.exceptions import InternalException, MissingEnvironmentVariable
 
 
@@ -58,6 +60,21 @@ class AirtableDatabase(DatabaseInterface):
             return records[0]
         else:
             raise InternalException(f"{len(records)} records found for {key} : {value}")
+
+    def _record_exist(self, key: str, value: str, table_id: str) -> bool:
+        """
+        Check if a record identified with a key, value exists in the table.
+
+        :param key:
+        :param value:
+        :param table_id:
+        :return:
+        """
+        _filter = f"{key}='{value}'"
+        records = self.client.list_records(
+            self.base_id, table_id, {"filterByFormula": _filter}
+        )["records"]
+        return len(records) > 0
 
     def get_strava_credentials(self, athlete_id: str) -> StravaToken:
         """
@@ -120,7 +137,7 @@ class AirtableDatabase(DatabaseInterface):
         :return:
         """
         record = self._get_single_record_by_id("bot_id", bot_id, self.notion_table_id)
-        return record["fields"]["database_id"]
+        return record["fields"].get("database_id")
 
     def get_notion_access_token(self, bot_id: str) -> str:
         """
@@ -131,3 +148,131 @@ class AirtableDatabase(DatabaseInterface):
         """
         record = self._get_single_record_by_id("bot_id", bot_id, self.notion_table_id)
         return record["fields"]["access_token"]
+
+    def add_or_update_user(self, credentials: OauthCredentials) -> None:
+        """
+        Add or update a user.
+
+        It add or update the tables : oauth (for Strava), rel_strava_notion and notion.
+        :param credentials:
+        :return:
+        """
+        self._add_or_update_strava(credentials["strava"])
+        self._add_or_update_rel(
+            credentials["strava"]["athlete"], credentials["notion"]["bot_id"]
+        )
+        self._add_or_update_notion(credentials["notion"])
+
+    def update_database_id(self, bot_id: str, database_id: str) -> None:
+        """
+        Update the database id in the notion table.
+
+        :param bot_id:
+        :param database_id:
+        :return:
+        """
+        record_id = self._get_single_record_by_id(
+            "bot_id", bot_id, self.notion_table_id
+        )["id"]
+        body = {
+            "fields": {"database_id": database_id},
+            "returnFieldsByFieldId": None,
+            "typecast": None,
+        }
+        self.client.update_record(self.base_id, self.notion_table_id, record_id, body)
+
+    def _add_or_update_strava(self, strava_credentials: StravaCredentials) -> None:
+        """
+        Add or update the Strava table.
+
+        :param strava_credentials:
+        :return:
+        """
+        athlete_id = strava_credentials["athlete"]
+        if self._record_exist("athlete_id", athlete_id, self.strava_table_id):
+            self.update_strava_credentials(athlete_id, strava_credentials)
+        else:
+            _fields = {
+                "athlete_id": athlete_id,
+                "token_type": "Bearer",
+                "expires_at": strava_credentials["expires_at"],
+                "refresh_token": strava_credentials["refresh_token"],
+                "expires_in": "21600",
+                "access_token": strava_credentials["access_token"],
+            }
+            body = {
+                "fields": _fields,
+                "returnFieldsByFieldId": None,
+                "typecast": None,
+                "records": None,
+            }
+            self.client.create_records(self.base_id, self.strava_table_id, body)
+
+    def _add_or_update_rel(self, athlete: str, bot_id: str) -> None:
+        """
+        Add or update relation table.
+
+        :param athlete:
+        :param bot_id:
+        :return:
+        """
+        fields = {"athlete_id": athlete, "notion_bot_id": bot_id}
+        if self._record_exist("athlete_id", athlete, self.rel_strava_notion_table_id):
+            record_id = self._get_single_record_by_id(
+                "athlete_id", athlete, self.rel_strava_notion_table_id
+            )["id"]
+            body = {
+                "fields": fields,
+                "returnFieldsByFieldId": None,
+                "typecast": None,
+            }
+            self.client.update_record(
+                self.base_id, self.rel_strava_notion_table_id, record_id, body
+            )
+        else:
+            body = {
+                "fields": fields,
+                "returnFieldsByFieldId": None,
+                "typecast": None,
+                "records": None,
+            }
+            self.client.create_records(
+                self.base_id, self.rel_strava_notion_table_id, body
+            )
+
+    def _add_or_update_notion(self, credentials: NotionCredentials) -> None:
+        """
+        Add or update user's Notion credentials.
+
+        :param credentials:
+        :return:
+        """
+        fields = {
+            "bot_id": credentials["bot_id"],
+            "access_token": credentials["access_token"],
+            "duplicated_template_id": credentials["duplicated_template_id"],
+            "owner": json.dumps(credentials["owner"]),
+            "workspace_icon": credentials["workspace_icon"],
+            "workspace_id": credentials["workspace_id"],
+            "workspace_name": credentials["workspace_name"],
+        }
+        if self._record_exist("bot_id", fields["bot_id"], self.notion_table_id):
+            record_id = self._get_single_record_by_id(
+                "bot_id", fields["bot_id"], self.notion_table_id
+            )["id"]
+            body = {
+                "fields": fields,
+                "returnFieldsByFieldId": None,
+                "typecast": None,
+            }
+            self.client.update_record(
+                self.base_id, self.notion_table_id, record_id, body
+            )
+        else:
+            body = {
+                "fields": fields,
+                "returnFieldsByFieldId": None,
+                "typecast": None,
+                "records": None,
+            }
+            self.client.create_records(self.base_id, self.notion_table_id, body)

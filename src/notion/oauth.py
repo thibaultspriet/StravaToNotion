@@ -1,5 +1,6 @@
 """Handle the OAuth flow of Notion to allow access to the public integration."""
 import base64
+import json
 
 import requests
 
@@ -31,4 +32,4 @@ def exchange_token(
     }
 
     res = requests.post(url, headers=headers, json=body)
-    return res.content
+    return json.loads(res.content)

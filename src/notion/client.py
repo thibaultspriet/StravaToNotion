@@ -143,3 +143,56 @@ class Client:
             raise Exception(res.text)
         else:
             return json.loads(res.content)
+
+    def search(
+        self,
+        query: str = None,
+        sort: dict = None,
+        _filter: dict = None,
+        start_cursor: str = None,
+        page_size: int = None,
+    ) -> dict:
+        """
+        Call the search endpoint.
+
+        This endpoint allows retrieving pages and databases shared with the integration.
+        :param query:
+        :param sort:
+        :param _filter:
+        :param start_cursor:
+        :param page_size:
+        :return:
+        """
+        url = f"{self.base_url}v1/search"
+        body = {}
+        for k, v in {
+            "query": query,
+            "sort": sort,
+            "filter": _filter,
+            "start_cursor": start_cursor,
+            "page_size": page_size,
+        }.items():
+            if v is not None:
+                body[k] = v
+        res = requests.post(url, headers=self.header, json=body)
+        if res.status_code != 200:
+            raise Exception(res.text)
+        else:
+            return json.loads(res.content)
+
+    def create_database(self, parent: dict, title: list, properties: dict) -> dict:
+        """
+        Call the database endpoint to create a new one.
+
+        :param parent:
+        :param title:
+        :param properties:
+        :return:
+        """
+        url = f"{self.base_url}v1/databases"
+        body = {"parent": parent, "title": title, "properties": properties}
+        res = requests.post(url, headers=self.header, json=body)
+        if res.status_code != 200:
+            raise Exception(res.text)
+        else:
+            return json.loads(res.content)

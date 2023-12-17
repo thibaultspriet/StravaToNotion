@@ -10,7 +10,7 @@ python = "^3.8"
 requests = "^2.31.0"
 
 [tool.poetry.group.dev]
-optional = true
+optional = false
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.5.0"

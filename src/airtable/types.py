@@ -34,6 +34,15 @@ class UpdateRecordBodyParameters(TypedDict):
     typecast: Optional[bool]
 
 
+class CreateRecordsBodyParameter(TypedDict):
+    """Type for body parameters of the create records endpoint."""
+
+    fields: Optional[dict]  # To create a single record
+    records: Optional[list[dict]]
+    returnFieldsByFieldId: Optional[bool]
+    typecast: Optional[bool]
+
+
 class Record(TypedDict):
     """Type for a record."""
 

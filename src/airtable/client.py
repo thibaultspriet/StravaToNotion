@@ -1,10 +1,11 @@
 """Implement a client that handles airtables API calls."""
 import json
-from typing import Optional
+from typing import Optional, Union
 
 import requests
 
 from src.airtable.types import (
+    CreateRecordsBodyParameter,
     ListRecordsQueryParameters,
     Record,
     UpdateRecordBodyParameters,
@@ -82,6 +83,26 @@ class Client:
         check_keys_of_typed_dict(body, UpdateRecordBodyParameters)
         url = f"{self.versioned_url}{base_id}/{table_id}/{record_id}"
         res = requests.patch(url, json=body, headers=self.base_headers())
+        if res.status_code != 200:
+            raise Exception(res.text)
+        else:
+            return json.loads(res.content)
+
+    def create_records(
+        self, base_id: str, table_id: str, body: CreateRecordsBodyParameter
+    ) -> Union[Record, list[Record]]:
+        """
+        Call the create records endpoint.
+
+        It is possible to create a single or multiple records.
+        :param base_id:
+        :param table_id:
+        :param body:
+        :return:
+        """
+        check_keys_of_typed_dict(body, CreateRecordsBodyParameter)
+        url = f"{self.versioned_url}{base_id}/{table_id}"
+        res = requests.post(url, json=body, headers=self.base_headers())
         if res.status_code != 200:
             raise Exception(res.text)
         else:

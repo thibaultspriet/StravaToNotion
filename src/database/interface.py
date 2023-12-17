@@ -1,7 +1,8 @@
-"""Decalre the database interface."""
+"""Declare the database interface."""
 from abc import ABC, abstractmethod
 
 from src.types.database import StravaToken
+from src.types.oauth import OauthCredentials
 
 
 class DatabaseInterface(ABC):
@@ -54,5 +55,25 @@ class DatabaseInterface(ABC):
         Return the Notion access token.
 
         :param bot_id:
+        :return:
+        """
+
+    @abstractmethod
+    def add_or_update_user(self, credentials: OauthCredentials) -> None:
+        """
+        Add or update a user.
+
+        A user is identified with both its credentials for Strava and Notion.
+        :param credentials:
+        :return:
+        """
+
+    @abstractmethod
+    def update_database_id(self, bot_id: str, database_id: str) -> None:
+        """
+        Update the Strava activities database id.
+
+        :param bot_id:
+        :param database_id:
         :return:
         """
