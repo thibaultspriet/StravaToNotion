@@ -10,6 +10,7 @@ from src.database.airtable import AirtableDatabase
 from src.handlers.oauth import add_or_update_user
 from src.handlers.strava_subscription import callback_validation
 from src.notion.oauth import exchange_token
+from src.strava.oauth import exchange_code as strava_exchange_token
 from src.types.event import HttpEvent
 
 logger = logging.getLogger()
@@ -63,6 +64,17 @@ def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
             client_id=client_id,
             client_secret=client_secret,
             redirect_uri=redirect_uri,
+        )
+        logger.info(res)
+        return res
+    elif (method == "POST") & (path == "/strava_oauth_token"):
+        client_id = os.environ["STRAVA_CLIENT_ID"]
+        client_secret = os.environ["STRAVA_CLIENT_SECRET"]
+        code = json.loads(event["body"])["code"]
+        res = strava_exchange_token(
+            code=code,
+            client_id=client_id,
+            client_secret=client_secret,
         )
         logger.info(res)
         return res

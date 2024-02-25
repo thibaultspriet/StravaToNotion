@@ -56,5 +56,5 @@ jobs:
         aws-region: eu-north-1
     - name: Deploy Lambda functions
       run: |
-        aws lambda update-function-code --function-name strava_webhook --zip-file fileb://deployment_package.zip --no-cli-pager
-        aws lambda update-function-code --function-name process_events --zip-file fileb://deployment_package.zip --no-cli-pager
+        aws lambda update-function-code --function-name prd_strava_webhook --zip-file fileb://deployment_package.zip --no-cli-pager
+        aws lambda update-function-code --function-name prd_process_events --zip-file fileb://deployment_package.zip --no-cli-pager

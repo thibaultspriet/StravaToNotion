@@ -18,12 +18,12 @@ build_dep:
 	cd dependencies; zip -r ../deployment_package.zip .
 
 deploy_webhook:
-	aws lambda update-function-code --function-name strava_webhook \
+	aws lambda update-function-code --function-name dev_strava_webhook \
 	--zip-file fileb://deployment_package.zip --no-cli-pager
 
 deploy_process:
-	aws lambda update-function-code --function-name process_events \
+	aws lambda update-function-code --function-name dev_process_events \
 	--zip-file fileb://deployment_package.zip --no-cli-pager
 
 tf:
-	$(MAKE) -C terraform-aws-deployment all
+	$(MAKE) -C dev-terraform-aws-deployment all
