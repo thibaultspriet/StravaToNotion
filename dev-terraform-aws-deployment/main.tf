@@ -1,3 +1,8 @@
+variable "ENV" {
+  description = "Deployment environment"
+  type        = string
+}
+
 variable "VERIFY_TOKEN" {
   description = "The Strava verify token"
   type        = string
@@ -118,14 +123,14 @@ data "aws_iam_policy_document" "lambda_logging" {
 }
 
 resource "aws_iam_policy" "lambda_logging" {
-  name        = "lambda_logging"
+  name        = "${var.ENV}_lambda_logging"
   path        = "/"
   description = "IAM policy for logging from a lambda"
   policy      = data.aws_iam_policy_document.lambda_logging.json
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name               = "iam_for_lambda"
+  name               = "${var.ENV}_iam_for_lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
@@ -138,7 +143,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 
 resource "aws_lambda_function" "test_lambda" {
   filename      = "../deployment_package.zip"
-  function_name = var.lambda_function_name
+  function_name = "${var.ENV}_${var.lambda_function_name}"
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "lambda_function.controller"
   runtime       = "python3.11"
@@ -161,6 +166,8 @@ resource "aws_lambda_function" "test_lambda" {
       AIRTABLE_TABLE_STRAVA_ID            = var.AIRTABLE_TABLE_STRAVA_ID
       AIRTABLE_TABLE_REL_STRAVA_NOTION_ID = var.AIRTABLE_TABLE_REL_STRAVA_NOTION_ID
       AIRTABLE_TABLE_NOTION               = var.AIRTABLE_TABLE_NOTION
+      STRAVA_CLIENT_ID                    = var.STRAVA_CLIENT_ID
+      STRAVA_CLIENT_SECRET                = var.STRAVA_CLIENT_SECRET
     }
   }
 }
@@ -182,13 +189,13 @@ resource "aws_lambda_function_url" "test_latest" {
 # This is to optionally manage the CloudWatch Log Group for the Lambda Function.
 # If skipping this resource configuration, also add "logs:CreateLogGroup" to the IAM policy below.
 resource "aws_cloudwatch_log_group" "strava_webhook" {
-  name              = "/aws/lambda/${var.lambda_function_name}"
+  name              = "/aws/lambda/${var.ENV}_${var.lambda_function_name}"
   retention_in_days = 7
 }
 
 ############ SQS FIFO queue ############
 resource "aws_iam_role_policy" "sqs_policy" {
-  name = "sqs_send_message_policy"
+  name = "${var.ENV}_sqs_send_message_policy"
   role = aws_iam_role.iam_for_lambda.name
 
   policy = <<EOF
@@ -205,13 +212,14 @@ resource "aws_iam_role_policy" "sqs_policy" {
 EOF
 }
 resource "aws_sqs_queue" "terraform_queue" {
-  name                        = var.sqs_name
+  name                        = "${var.ENV}_${var.sqs_name}"
   fifo_queue                  = true
   content_based_deduplication = true
   delay_seconds               = 0
   max_message_size            = 262144
   message_retention_seconds   = 600
   receive_wait_time_seconds   = 0
+  visibility_timeout_seconds  = aws_lambda_function.process_events.timeout
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.terraform_queue_deadletter.arn
     maxReceiveCount     = 1
@@ -219,13 +227,13 @@ resource "aws_sqs_queue" "terraform_queue" {
 }
 
 resource "aws_sqs_queue" "terraform_queue_deadletter" {
-  name                        = "dlq-strava-events.fifo"
+  name                        = "${var.ENV}_dlq-strava-events.fifo"
   fifo_queue                  = true
   content_based_deduplication = true
   message_retention_seconds   = 604800 // 7 days
   redrive_allow_policy = jsonencode({
     redrivePermission = "byQueue",
-    sourceQueueArns   = ["arn:aws:sqs:${var.region}:${var.ACCOUNT_ID}:${var.sqs_name}"]
+    sourceQueueArns   = ["arn:aws:sqs:${var.region}:${var.ACCOUNT_ID}:${var.ENV}_${var.sqs_name}"]
   })
 }
 
@@ -238,7 +246,7 @@ resource "aws_lambda_function" "process_events" {
   # If the file is not in the current working directory you will need to include a
   # path.module in the filename.
   filename      = "../deployment_package.zip"
-  function_name = var.lambda_process_function_name
+  function_name = "${var.ENV}_${var.lambda_process_function_name}"
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "lambda_process_events.controller"
   runtime       = "python3.11"
@@ -265,7 +273,7 @@ resource "aws_lambda_function" "process_events" {
 
 // Logs
 resource "aws_cloudwatch_log_group" "process_events" {
-  name              = "/aws/lambda/${var.lambda_process_function_name}"
+  name              = "/aws/lambda/${var.ENV}_${var.lambda_process_function_name}"
   retention_in_days = 7
 }
 
