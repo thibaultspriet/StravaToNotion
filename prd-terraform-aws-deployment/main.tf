@@ -6,66 +6,79 @@ variable "ENV" {
 variable "VERIFY_TOKEN" {
   description = "The Strava verify token"
   type        = string
+  sensitive   = true
 }
 
 variable "ACCOUNT_ID" {
   description = "The aws account id"
   type        = string
+  sensitive   = true
 }
 
 variable "AIRTABLE_PAT" {
   description = "airtable personal access token for the strava base"
   type        = string
+  sensitive   = true
 }
 
 variable "AIRTABLE_BASE_ID" {
   description = "id of the airtable base"
   type        = string
+  sensitive   = true
 }
 
 variable "AIRTABLE_TABLE_STRAVA_ID" {
   description = "id of the table that stores Strava tokens"
   type        = string
+  sensitive   = true
 }
 
 variable "AIRTABLE_TABLE_REL_STRAVA_NOTION_ID" {
   description = "id of the table that stores relation between Strava athlete id and Notion bot id"
   type        = string
+  sensitive   = true
 }
 
 variable "AIRTABLE_TABLE_NOTION" {
   description = "id of the table that stores Notion integration data"
   type        = string
+  sensitive   = true
 }
 
 variable "STRAVA_CLIENT_ID" {
   description = "client id of Strava application"
   type        = string
+  sensitive   = true
 }
 
 variable "STRAVA_CLIENT_SECRET" {
   description = "client secret of Strava application"
   type        = string
+  sensitive   = true
 }
 
 variable "NOTION_CLIENT_ID" {
   description = "client id of Notion integration"
   type        = string
+  sensitive   = true
 }
 
 variable "NOTION_CLIENT_SECRET" {
   description = "client secret of Notion integration"
   type        = string
+  sensitive   = true
 }
 
 variable "NOTION_CLIENT_REDIRECT_URI" {
   description = "Notion redirect URI of integration"
   type        = string
+  sensitive   = true
 }
 
 variable "lambda_function_name" {
   description = "lambda function name of Strava callback"
   default     = "strava_webhook"
+  sensitive   = true
 }
 
 variable "region" {
@@ -76,6 +89,7 @@ variable "region" {
 variable "sqs_name" {
   description = "name of sqs queue"
   default     = "strava-events.fifo"
+  sensitive   = true
 }
 
 
