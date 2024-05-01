@@ -128,20 +128,6 @@ class AirtableDatabase(DatabaseInterface):
         }
         self.client.update_record(self.base_id, self.strava_table_id, record_id, body)
 
-    def get_notion_bot_id_from_athlete(self, athlete_id: str) -> str:
-        """
-        Return the Notion bot id.
-
-        It uses the relation table rel_strava_notion
-
-        :param athlete_id:
-        :return:
-        """
-        record = self._get_single_record_by_id(
-            "athlete_id", athlete_id, self.rel_strava_notion_table_id
-        )
-        return record["fields"]["notion_bot_id"]
-
     def list_databases(self, athlete_id: str) -> list[dict]:
         """
         Return a list of Notion databases registered for a Strava athlete id.

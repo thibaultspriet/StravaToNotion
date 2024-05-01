@@ -30,16 +30,6 @@ class DatabaseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_notion_bot_id_from_athlete(self, athlete_id: str) -> str:
-        """
-        Return the Notion bot id based on the Strava athlete id.
-
-        :param athlete_id:
-        :return:
-        """
-        pass
-
-    @abstractmethod
     def get_notion_database_id(
         self, user_email: str, athlete_id: str, bot_id: str
     ) -> str:
