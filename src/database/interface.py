@@ -40,10 +40,14 @@ class DatabaseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_notion_database_id(self, bot_id: str) -> str:
+    def get_notion_database_id(
+        self, user_email: str, athlete_id: str, bot_id: str
+    ) -> str:
         """
         Return the Notion database id from the bot id.
 
+        :param user_email:
+        :param athlete_id:
         :param bot_id:
         :return:
         """
@@ -69,10 +73,14 @@ class DatabaseInterface(ABC):
         """
 
     @abstractmethod
-    def update_database_id(self, bot_id: str, database_id: str) -> None:
+    def update_database_id(
+        self, user_email: str, athlete_id: str, bot_id: str, database_id: str
+    ) -> None:
         """
         Update the Strava activities database id.
 
+        :param user_email:
+        :param athlete_id:
         :param bot_id:
         :param database_id:
         :return:

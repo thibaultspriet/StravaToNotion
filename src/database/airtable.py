@@ -1,6 +1,7 @@
 """Concrete implementation of database with airtable."""
 import json
 import os
+from typing import Union
 
 from src.airtable.client import Client
 from src.airtable.types import Record
@@ -39,7 +40,9 @@ class AirtableDatabase(DatabaseInterface):
 
         self.client = Client(self.pat)
 
-    def _get_single_record_by_id(self, key: str, value: str, table_id: str) -> Record:
+    def _get_single_record_by_id(
+        self, key: Union[str, list[str]], value: Union[str, list[str]], table_id: str
+    ) -> Record:
         """
         Return a record of athlete if exists.
 
@@ -48,7 +51,11 @@ class AirtableDatabase(DatabaseInterface):
         :param table_id:
         :return:
         """
-        _filter = f"{key}='{value}'"
+        if isinstance(key, str):
+            key = [key]
+            value = [value]
+        _filter = ", ".join([f"{k}='{v}'" for k, v in zip(key, value)])
+        _filter = f"AND({_filter})"
         records = self.client.list_records(
             self.base_id, table_id, {"filterByFormula": _filter}
         )["records"]
@@ -61,7 +68,9 @@ class AirtableDatabase(DatabaseInterface):
         else:
             raise InternalException(f"{len(records)} records found for {key} : {value}")
 
-    def _record_exist(self, key: str, value: str, table_id: str) -> bool:
+    def _record_exist(
+        self, key: Union[str, list[str]], value: Union[str, list[str]], table_id: str
+    ) -> bool:
         """
         Check if a record identified with a key, value exists in the table.
 
@@ -70,7 +79,11 @@ class AirtableDatabase(DatabaseInterface):
         :param table_id:
         :return:
         """
-        _filter = f"{key}='{value}'"
+        if isinstance(key, str):
+            key = [key]
+            value = [value]
+        _filter = ", ".join([f"{k}='{v}'" for k, v in zip(key, value)])
+        _filter = f"AND({_filter})"
         records = self.client.list_records(
             self.base_id, table_id, {"filterByFormula": _filter}
         )["records"]
@@ -129,14 +142,22 @@ class AirtableDatabase(DatabaseInterface):
         )
         return record["fields"]["notion_bot_id"]
 
-    def get_notion_database_id(self, bot_id: str) -> str:
+    def get_notion_database_id(
+        self, user_email: str, athlete_id: str, bot_id: str
+    ) -> str:
         """
         Return the Notion database id from the bot id.
 
+        :param user_email:
+        :param athlete_id:
         :param bot_id:
         :return:
         """
-        record = self._get_single_record_by_id("bot_id", bot_id, self.notion_table_id)
+        record = self._get_single_record_by_id(
+            ["user_email", "athlete_id", "notion_bot_id"],
+            [user_email, athlete_id, bot_id],
+            self.rel_strava_notion_table_id,
+        )
         return record["fields"].get("database_id")
 
     def get_notion_access_token(self, bot_id: str) -> str:
@@ -159,21 +180,30 @@ class AirtableDatabase(DatabaseInterface):
         """
         self._add_or_update_strava(credentials["strava"])
         self._add_or_update_rel(
-            credentials["strava"]["athlete"], credentials["notion"]["bot_id"]
+            credentials["strava"]["athlete"],
+            credentials["notion"]["bot_id"],
+            credentials["user_email"],
         )
         self._add_or_update_notion(credentials["notion"])
 
-    def update_database_id(self, bot_id: str, database_id: str) -> None:
+    def update_database_id(
+        self, user_email: str, athlete_id: str, bot_id: str, database_id: str
+    ) -> None:
         """
         Update the database id in the notion table.
 
+        :param user_email:
+        :param athlete_id:
         :param bot_id:
         :param database_id:
         :return:
         """
         record_id = self._get_single_record_by_id(
-            "bot_id", bot_id, self.notion_table_id
+            ["user_email", "athlete_id", "notion_bot_id"],
+            [user_email, athlete_id, bot_id],
+            self.rel_strava_notion_table_id,
         )["id"]
+
         body = {
             "fields": {"database_id": database_id},
             "returnFieldsByFieldId": None,
@@ -208,18 +238,29 @@ class AirtableDatabase(DatabaseInterface):
             }
             self.client.create_records(self.base_id, self.strava_table_id, body)
 
-    def _add_or_update_rel(self, athlete: str, bot_id: str) -> None:
+    def _add_or_update_rel(self, athlete: str, bot_id: str, user_email: str) -> None:
         """
         Add or update relation table.
 
         :param athlete:
         :param bot_id:
+        :param user_email:
         :return:
         """
-        fields = {"athlete_id": athlete, "notion_bot_id": bot_id}
-        if self._record_exist("athlete_id", athlete, self.rel_strava_notion_table_id):
+        fields = {
+            "athlete_id": athlete,
+            "notion_bot_id": bot_id,
+            "user_email": user_email,
+        }
+        if self._record_exist(
+            ["user_email", "athlete_id", "notion_bot_id"],
+            [user_email, athlete, bot_id],
+            self.rel_strava_notion_table_id,
+        ):
             record_id = self._get_single_record_by_id(
-                "athlete_id", athlete, self.rel_strava_notion_table_id
+                ["user_email", "athlete_id", "notion_bot_id"],
+                [user_email, athlete, bot_id],
+                self.rel_strava_notion_table_id,
             )["id"]
             body = {
                 "fields": fields,

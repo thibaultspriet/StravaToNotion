@@ -28,3 +28,4 @@ class OauthCredentials(TypedDict):
 
     strava: StravaCredentials
     notion: NotionCredentials
+    user_email: str
