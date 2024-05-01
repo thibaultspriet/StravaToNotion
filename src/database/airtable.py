@@ -142,6 +142,27 @@ class AirtableDatabase(DatabaseInterface):
         )
         return record["fields"]["notion_bot_id"]
 
+    def list_databases(self, athlete_id: str) -> list[dict]:
+        """
+        Return a list of Notion databases registered for a Strava athlete id.
+
+        :param athlete_id:
+        :return: list of dict with keys : bot_id & database_id
+        """
+        records = self.client.list_records(
+            self.base_id,
+            self.rel_strava_notion_table_id,
+            {"filterByFormula": f"athlete_id='{athlete_id}'"},
+        )["records"]
+
+        return [
+            {
+                "bot_id": r["fields"]["notion_bot_id"],
+                "database_id": r["fields"]["database_id"],
+            }
+            for r in records
+        ]
+
     def get_notion_database_id(
         self, user_email: str, athlete_id: str, bot_id: str
     ) -> str:

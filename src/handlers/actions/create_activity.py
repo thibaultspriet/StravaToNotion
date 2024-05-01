@@ -37,13 +37,23 @@ class CreateActivity(Action):
         # fetch Strava activity data
         activity = strava_client.get_activity(self.object_id)
         activity = {k: activity[k] for k in STRAVA_ACTIVITY_FIELDS}
-        # fetch Notion database id and Notion credentials of owner
-        bot_id = self.database.get_notion_bot_id_from_athlete(self.owner_id)
-        database_id = self.database.get_notion_database_id(bot_id)
-        notion_access_token = self.database.get_notion_access_token(bot_id)
-        # add a new page in Notion database with activity data
-        notion_client = NotionClient(notion_access_token)
         properties = strava_activity_to_notion_properties(activity)
-        page = notion_client.create_page(database_id, properties)
 
-        return {"code": 200, "message": f"page {page['id']} created"}
+        databases = self.database.list_databases(self.owner_id)
+        message = []
+        for database in databases:
+            try:
+                notion_access_token = self.database.get_notion_access_token(
+                    database["bot_id"]
+                )
+                # add a new page in Notion database with activity data
+                notion_client = NotionClient(notion_access_token)
+                page = notion_client.create_page(database["database_id"], properties)
+                message.append(
+                    f"page {page['id']} created for bot_id {database['bot_id']}"
+                )
+            except Exception as e:
+                message.append(
+                    f"add activity {self.object_id} to bot_id {database['bot_id']} failed"
+                )
+        return {"code": 200, "message": "\n".join(message)}

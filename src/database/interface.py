@@ -54,6 +54,15 @@ class DatabaseInterface(ABC):
         pass
 
     @abstractmethod
+    def list_databases(self, athlete_id: str) -> list[dict]:
+        """
+        Return a list of Notion databases registered for a Strava athlete id.
+
+        :param athlete_id:
+        :return: list of dict with keys : bot_id & database_id
+        """
+
+    @abstractmethod
     def get_notion_access_token(self, bot_id: str) -> str:
         """
         Return the Notion access token.
