@@ -54,6 +54,6 @@ class CreateActivity(Action):
                 )
             except Exception as e:
                 message.append(
-                    f"add activity {self.object_id} to bot_id {database['bot_id']} failed"
+                    f"add activity {self.object_id} to bot_id {database['bot_id']} failed because: {e}"
                 )
         return {"code": 200, "message": "\n".join(message)}

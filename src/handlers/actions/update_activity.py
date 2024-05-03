@@ -53,6 +53,8 @@ class UpdateActivity(Action):
                     f"page {', '.join(updated_pages)} updated on database {database_id}"
                 )
             except Exception as e:
-                message.append(f"failed to update page on database {database_id}")
+                message.append(
+                    f"failed to update page on database {database_id} because {e}"
+                )
 
         return {"code": 200, "message": "\n".join(message)}
