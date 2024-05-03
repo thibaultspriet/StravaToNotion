@@ -36,7 +36,8 @@ def controller(event: SqsEvent, context: dict[str, Any]) -> Any:
                 object_id = str(body["object_id"])
                 database_client = AirtableDatabase()
                 try:
-                    concrete_action(owner, object_id, database_client).run()
+                    res = concrete_action(owner, object_id, database_client).run()
+                    logger.info(res)
                 except Exception as e:
                     logger.exception(
                         f"exception encountered while processing {message_id}"
