@@ -1,5 +1,5 @@
 """Custom types for Oauth."""
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 
 class StravaCredentials(TypedDict):
@@ -29,3 +29,11 @@ class OauthCredentials(TypedDict):
     strava: StravaCredentials
     notion: NotionCredentials
     user_email: str
+
+
+class StravaAthleteInfo(TypedDict):
+    """Type of Strave Athlete info."""
+
+    username: Optional[str]
+    firstname: Optional[str]
+    lastname: Optional[str]

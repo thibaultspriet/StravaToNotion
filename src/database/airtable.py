@@ -7,7 +7,12 @@ from src.airtable.client import Client
 from src.airtable.types import Record
 from src.database.interface import DatabaseInterface
 from src.types.database import StravaToken
-from src.types.oauth import NotionCredentials, OauthCredentials, StravaCredentials
+from src.types.oauth import (
+    NotionCredentials,
+    OauthCredentials,
+    StravaAthleteInfo,
+    StravaCredentials,
+)
 from src.utils.exceptions import InternalException, MissingEnvironmentVariable
 
 
@@ -177,15 +182,18 @@ class AirtableDatabase(DatabaseInterface):
         record = self._get_single_record_by_id("bot_id", bot_id, self.notion_table_id)
         return record["fields"]["access_token"]
 
-    def add_or_update_user(self, credentials: OauthCredentials) -> None:
+    def add_or_update_user(
+        self, credentials: OauthCredentials, athlete_info: StravaAthleteInfo
+    ) -> None:
         """
         Add or update a user.
 
         It add or update the tables : oauth (for Strava), rel_strava_notion and notion.
         :param credentials:
+        :param athlete_info:
         :return:
         """
-        self._add_or_update_strava(credentials["strava"])
+        self._add_or_update_strava(credentials["strava"], athlete_info)
         self._add_or_update_rel(
             credentials["strava"]["athlete"],
             credentials["notion"]["bot_id"],
@@ -218,10 +226,13 @@ class AirtableDatabase(DatabaseInterface):
         }
         self.client.update_record(self.base_id, self.notion_table_id, record_id, body)
 
-    def _add_or_update_strava(self, strava_credentials: StravaCredentials) -> None:
+    def _add_or_update_strava(
+        self, strava_credentials: StravaCredentials, athlete_info: StravaAthleteInfo
+    ) -> None:
         """
         Add or update the Strava table.
 
+        :param strava_credentials:
         :param strava_credentials:
         :return:
         """
@@ -231,6 +242,9 @@ class AirtableDatabase(DatabaseInterface):
         else:
             _fields = {
                 "athlete_id": athlete_id,
+                "username": athlete_info["username"],
+                "firstname": athlete_info["firstname"],
+                "lastname": athlete_info["lastname"],
                 "token_type": "Bearer",
                 "expires_at": strava_credentials["expires_at"],
                 "refresh_token": strava_credentials["refresh_token"],

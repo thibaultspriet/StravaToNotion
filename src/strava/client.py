@@ -98,3 +98,17 @@ class Client:
             raise Exception(res.text)
         else:
             return json.loads(res.content)
+
+    def get_athlete(self) -> dict:
+        """
+        Return athlete info.
+
+        :return:
+        """
+        url = f"{self.url}athlete/"
+        self.refresh_access_token()
+        res = requests.get(url, headers=self.authorization)
+        if res.status_code != 200:
+            raise Exception(res.text)
+        else:
+            return json.loads(res.content)

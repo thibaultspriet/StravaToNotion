@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 
 from src.types.database import StravaToken
-from src.types.oauth import OauthCredentials
+from src.types.oauth import OauthCredentials, StravaAthleteInfo
 
 
 class DatabaseInterface(ABC):
@@ -62,12 +62,15 @@ class DatabaseInterface(ABC):
         """
 
     @abstractmethod
-    def add_or_update_user(self, credentials: OauthCredentials) -> None:
+    def add_or_update_user(
+        self, credentials: OauthCredentials, athlete_info: StravaAthleteInfo
+    ) -> None:
         """
         Add or update a user.
 
         A user is identified with both its credentials for Strava and Notion.
         :param credentials:
+        :param athlete_info:
         :return:
         """
 
