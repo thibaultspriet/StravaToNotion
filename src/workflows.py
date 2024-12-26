@@ -55,7 +55,9 @@ def strava_activity_to_notion_properties(activity: dict) -> dict:
         "distance": activity["distance"],
     }
 
-    return json.loads(NOTION_DATABASE_PROPERTIES_TEMPLATE.substitute(**mapping))
+    return json.loads(
+        NOTION_DATABASE_PROPERTIES_TEMPLATE.substitute(**mapping), strict=False
+    )
 
 
 def create_notion_database(notion_client: NotionClient, parent_id: str) -> str:
