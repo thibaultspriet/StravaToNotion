@@ -182,6 +182,24 @@ class AirtableDatabase(DatabaseInterface):
         record = self._get_single_record_by_id("bot_id", bot_id, self.notion_table_id)
         return record["fields"]["access_token"]
 
+    def get_athlete_username(self, athlete_id: str) -> str:
+        """
+        Return the Strava username.
+
+        :param athlete_id:
+        :return:
+        """
+        record = self._get_single_record_by_id(
+            "athlete_id", athlete_id, self.strava_table_id
+        )
+
+        username: str = record["fields"].get("username")
+
+        if username is not None and username.strip() != "":
+            return username
+        else:
+            return f"{record['fields'].get('firstname')} {record['fields'].get('lastname')}"
+
     def add_or_update_user(
         self, credentials: OauthCredentials, athlete_info: StravaAthleteInfo
     ) -> None:

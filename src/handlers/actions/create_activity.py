@@ -35,9 +35,12 @@ class CreateActivity(Action):
         )
         refresh_strava_token(self.owner_id, strava_client, self.database)
         # fetch Strava activity data
+        athlete_username = self.database.get_athlete_username(self.owner_id)
         activity = strava_client.get_activity(self.object_id)
         activity = {k: activity[k] for k in STRAVA_ACTIVITY_FIELDS}
-        properties = strava_activity_to_notion_properties(activity)
+        properties = strava_activity_to_notion_properties(
+            {**activity, "username": athlete_username}
+        )
 
         databases = self.database.list_databases(self.owner_id)
         message = []

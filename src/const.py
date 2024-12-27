@@ -86,6 +86,15 @@ NOTION_DATABASE_PROPERTIES_TEMPLATE = Template(
             }
         ]
     },
+    "Athlète": {
+        "rich_text": [
+            {
+                "text": {
+                    "content": "$username"
+                }
+            }
+        ]
+    },
     "Description": {
         "rich_text": [
             {
@@ -164,6 +173,7 @@ NOTION_DATABASE_SCHEMA = {
     "Distance": {"number": {"format": "number"}},
     "AVG Speed": {"number": {"format": "number"}},
     "Description": {"rich_text": {}},
+    "Athlète": {"rich_text": {}},
     "Distance (km)": {"formula": {"expression": 'round(prop("Distance")/100)/10'}},
     "Max Speed": {"number": {"format": "number"}},
     "Time (min)": {"formula": {"expression": 'round(prop("Time")/60)'}},

@@ -53,6 +53,7 @@ def strava_activity_to_notion_properties(activity: dict) -> dict:
         "upload_id": activity["upload_id"],
         "time": activity["moving_time"],
         "distance": activity["distance"],
+        "username": activity["username"],
     }
 
     return json.loads(

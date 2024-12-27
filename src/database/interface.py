@@ -87,3 +87,13 @@ class DatabaseInterface(ABC):
         :param database_id:
         :return:
         """
+
+    @abstractmethod
+    def get_athlete_username(self, athlete_id: str) -> str:
+        """
+        Return the username of the identified athlete.
+
+        :param athlete_id:
+        :return:
+        """
+        pass

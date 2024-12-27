@@ -25,6 +25,7 @@ class UpdateActivity(Action):
         # fetch Strava activity data
         activity = strava_client.get_activity(self.object_id)
         activity = {k: activity[k] for k in STRAVA_ACTIVITY_FIELDS}
+        athlete_username = self.database.get_athlete_username(self.owner_id)
         # fetch Notion database id and Notion credentials of owner
         databases = self.database.list_databases(self.owner_id)
         message = []
@@ -42,11 +43,15 @@ class UpdateActivity(Action):
                 updated_pages = []
                 if len(page_ids) >= 1:
                     for id_ in page_ids:
-                        properties = strava_activity_to_notion_properties(activity)
+                        properties = strava_activity_to_notion_properties(
+                            {**activity, "username": athlete_username}
+                        )
                         notion_client.update_page_properties(id_, properties)
                         updated_pages.append(id_)
                 else:
-                    properties = strava_activity_to_notion_properties(activity)
+                    properties = strava_activity_to_notion_properties(
+                        {**activity, "username": athlete_username}
+                    )
                     page = notion_client.create_page(database_id, properties)
                     updated_pages.append(page["id"])
                 message.append(
