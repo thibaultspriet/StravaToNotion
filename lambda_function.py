@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+from time import time
 from typing import Any
 
 import boto3
@@ -15,6 +16,8 @@ from src.types.event import HttpEvent
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+SQS = boto3.client("sqs")
 
 
 def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
@@ -48,11 +51,13 @@ def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
             raise RuntimeError("environment variable 'VERIFY_TOKEN' not set")
         return callback_validation(event["queryStringParameters"], strava_verify_token)
     elif (method == "POST") & (path == "/strava_callback"):
+        t0 = time()
         message_body = event["body"]
-        sqs = boto3.client("sqs")
-        sqs.send_message(
+        SQS.send_message(
             QueueUrl=os.environ["SQS_URL"], MessageBody=message_body, MessageGroupId="1"
         )
+        t1 = time()
+        print(f"Send message to queue : {t1-t0}s")
         return {"statusCode": 200, "body": message_body}
     elif (method == "POST") & (path == "/notion_oauth_token"):
         client_id = os.environ["NOTION_CLIENT_ID"]
