@@ -7,12 +7,7 @@ from src.airtable.client import Client
 from src.airtable.types import Record
 from src.database.interface import DatabaseInterface
 from src.types.database import StravaToken
-from src.types.oauth import (
-    NotionCredentials,
-    OauthCredentials,
-    StravaAthleteInfo,
-    StravaCredentials,
-)
+from src.types.oauth import NotionCredentials, StravaAthleteInfo, StravaCredentials
 from src.utils.exceptions import InternalException, MissingEnvironmentVariable
 
 
@@ -94,15 +89,31 @@ class AirtableDatabase(DatabaseInterface):
         )["records"]
         return len(records) > 0
 
-    def get_strava_credentials(self, athlete_id: str) -> StravaToken:
+    def get_athlete_accounts(self, athlete_id: str) -> list[str]:
         """
-        Fetch Strava tokens from airtable.
+        Retrieve list of user_email for a given Strava account.
 
         :param athlete_id:
         :return:
         """
+        records = self.client.list_records(
+            self.base_id,
+            self.strava_table_id,
+            {"filterByFormula": f"athlete_id='{athlete_id}'"},
+        )["records"]
+
+        return [record["fields"]["user_email"] for record in records]
+
+    def get_strava_credentials(self, athlete_id: str, user_email: str) -> StravaToken:
+        """
+        Fetch Strava tokens from airtable.
+
+        :param athlete_id:
+        :param user_email:
+        :return:
+        """
         record = self._get_single_record_by_id(
-            "athlete_id", athlete_id, self.strava_table_id
+            ["athlete_id", "user_email"], [athlete_id, user_email], self.strava_table_id
         )
         fields = record["fields"]
         return {
@@ -111,16 +122,19 @@ class AirtableDatabase(DatabaseInterface):
             "expires_at": fields["expires_at"],
         }
 
-    def update_strava_credentials(self, athlete_id: str, token: StravaToken) -> None:
+    def update_strava_credentials(
+        self, athlete_id: str, user_email: str, token: StravaToken
+    ) -> None:
         """
         Update the strava credentials with refresh token.
 
         :param athlete_id:
+        :param user_email:
         :param token:
         :return:
         """
         record_id = self._get_single_record_by_id(
-            "athlete_id", athlete_id, self.strava_table_id
+            ["athlete_id", "user_email"], [athlete_id, user_email], self.strava_table_id
         )["id"]
         body = {
             "fields": {
@@ -133,17 +147,20 @@ class AirtableDatabase(DatabaseInterface):
         }
         self.client.update_record(self.base_id, self.strava_table_id, record_id, body)
 
-    def list_databases(self, athlete_id: str) -> list[dict]:
+    def list_databases(self, athlete_id: str, user_email: str) -> list[dict]:
         """
         Return a list of Notion databases registered for a Strava athlete id.
 
         :param athlete_id:
+        :param user_email:
         :return: list of dict with keys : bot_id & database_id
         """
         records = self.client.list_records(
             self.base_id,
             self.rel_strava_notion_table_id,
-            {"filterByFormula": f"athlete_id='{athlete_id}'"},
+            {
+                "filterByFormula": f"AND(athlete_id='{athlete_id}', user_email='{user_email}')"
+            },
         )["records"]
 
         return [
@@ -182,15 +199,16 @@ class AirtableDatabase(DatabaseInterface):
         record = self._get_single_record_by_id("bot_id", bot_id, self.notion_table_id)
         return record["fields"]["access_token"]
 
-    def get_athlete_username(self, athlete_id: str) -> str:
+    def get_athlete_username(self, athlete_id: str, user_email: str) -> str:
         """
         Return the Strava username.
 
         :param athlete_id:
+        :param user_email:
         :return:
         """
         record = self._get_single_record_by_id(
-            "athlete_id", athlete_id, self.strava_table_id
+            ["athlete_id", "user_email"], [athlete_id, user_email], self.strava_table_id
         )
 
         username: str = record["fields"].get("username")
@@ -199,25 +217,6 @@ class AirtableDatabase(DatabaseInterface):
             return username
         else:
             return f"{record['fields'].get('firstname')} {record['fields'].get('lastname')}"
-
-    def add_or_update_user(
-        self, credentials: OauthCredentials, athlete_info: StravaAthleteInfo
-    ) -> None:
-        """
-        Add or update a user.
-
-        It add or update the tables : oauth (for Strava), rel_strava_notion and notion.
-        :param credentials:
-        :param athlete_info:
-        :return:
-        """
-        self._add_or_update_strava(credentials["strava"], athlete_info)
-        self._add_or_update_rel(
-            credentials["strava"]["athlete"],
-            credentials["notion"]["bot_id"],
-            credentials["user_email"],
-        )
-        self._add_or_update_notion(credentials["notion"])
 
     def update_database_id(
         self, user_email: str, athlete_id: str, bot_id: str, database_id: str
@@ -244,30 +243,37 @@ class AirtableDatabase(DatabaseInterface):
         }
         self.client.update_record(self.base_id, self.notion_table_id, record_id, body)
 
-    def _add_or_update_strava(
-        self, strava_credentials: StravaCredentials, athlete_info: StravaAthleteInfo
+    def add_or_update_strava(
+        self,
+        credentials: StravaCredentials,
+        user_email: str,
+        athlete_info: StravaAthleteInfo,
     ) -> None:
         """
         Add or update the Strava table.
 
-        :param strava_credentials:
-        :param strava_credentials:
+        :param credentials:
+        :param user_email:
+        :param athlete_info:
         :return:
         """
-        athlete_id = strava_credentials["athlete"]
-        if self._record_exist("athlete_id", athlete_id, self.strava_table_id):
-            self.update_strava_credentials(athlete_id, strava_credentials)
+        athlete_id = credentials["athlete"]
+        if self._record_exist(
+            ["athlete_id", "user_email"], [athlete_id, user_email], self.strava_table_id
+        ):
+            self.update_strava_credentials(athlete_id, user_email, credentials)
         else:
             _fields = {
                 "athlete_id": athlete_id,
+                "user_email": user_email,
                 "username": athlete_info["username"],
                 "firstname": athlete_info["firstname"],
                 "lastname": athlete_info["lastname"],
                 "token_type": "Bearer",
-                "expires_at": strava_credentials["expires_at"],
-                "refresh_token": strava_credentials["refresh_token"],
+                "expires_at": credentials["expires_at"],
+                "refresh_token": credentials["refresh_token"],
                 "expires_in": "21600",
-                "access_token": strava_credentials["access_token"],
+                "access_token": credentials["access_token"],
             }
             body = {
                 "fields": _fields,
@@ -276,6 +282,24 @@ class AirtableDatabase(DatabaseInterface):
                 "records": None,
             }
             self.client.create_records(self.base_id, self.strava_table_id, body)
+
+    def add_or_update_notion(
+        self, credentials: NotionCredentials, user_email: str, athlete_id: str
+    ) -> None:
+        """
+        Add credentials to database.
+
+        :param credentials:
+        :param user_email:
+        :param athlete_id:
+        :return:
+        """
+        self._add_or_update_rel(
+            athlete_id,
+            credentials["bot_id"],
+            user_email,
+        )
+        self._add_or_update_notion(credentials, user_email)
 
     def _add_or_update_rel(self, athlete: str, bot_id: str, user_email: str) -> None:
         """
@@ -320,15 +344,19 @@ class AirtableDatabase(DatabaseInterface):
                 self.base_id, self.rel_strava_notion_table_id, body
             )
 
-    def _add_or_update_notion(self, credentials: NotionCredentials) -> None:
+    def _add_or_update_notion(
+        self, credentials: NotionCredentials, user_email: str
+    ) -> None:
         """
         Add or update user's Notion credentials.
 
         :param credentials:
+        :param user_email
         :return:
         """
         fields = {
             "bot_id": credentials["bot_id"],
+            "user_email": user_email,
             "access_token": credentials["access_token"],
             "duplicated_template_id": credentials["duplicated_template_id"],
             "owner": json.dumps(credentials["owner"]),
@@ -336,9 +364,15 @@ class AirtableDatabase(DatabaseInterface):
             "workspace_id": credentials["workspace_id"],
             "workspace_name": credentials["workspace_name"],
         }
-        if self._record_exist("bot_id", fields["bot_id"], self.notion_table_id):
+        if self._record_exist(
+            ["bot_id", "user_email"],
+            [fields["bot_id"], user_email],
+            self.notion_table_id,
+        ):
             record_id = self._get_single_record_by_id(
-                "bot_id", fields["bot_id"], self.notion_table_id
+                ["bot_id", "user_email"],
+                [fields["bot_id"], user_email],
+                self.notion_table_id,
             )["id"]
             body = {
                 "fields": fields,

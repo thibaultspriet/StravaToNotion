@@ -7,7 +7,7 @@ from typing import Any
 import boto3
 
 from src.database.airtable import AirtableDatabase
-from src.handlers.oauth import add_or_update_user
+from src.handlers.oauth import add_or_update_notion, add_or_update_strava_oauth
 from src.handlers.strava_subscription import callback_validation
 from src.notion.oauth import exchange_token
 from src.strava.oauth import exchange_code as strava_exchange_token
@@ -78,10 +78,22 @@ def controller(event: HttpEvent, context: dict[str, Any]) -> Any:
         )
         logger.info(res)
         return res
-    elif (method == "POST") & (path == "/add_user"):
+    elif (method == "POST") & (path == "/add_strava_oauth"):
         oauth_credentials = json.loads(event["body"])
         logger.info(oauth_credentials)
         db = AirtableDatabase()
-        add_or_update_user(oauth_credentials, db)
+        add_or_update_strava_oauth(
+            oauth_credentials["strava"], oauth_credentials["user_email"], db
+        )
+    elif (method == "POST") & (path == "/add_notion"):
+        oauth_credentials = json.loads(event["body"])
+        logger.info(oauth_credentials)
+        db = AirtableDatabase()
+        add_or_update_notion(
+            oauth_credentials["notion"],
+            oauth_credentials["user_email"],
+            oauth_credentials["strava"]["athlete"],
+            db,
+        )
     else:
         raise RuntimeError(f"path {path} not implemented")

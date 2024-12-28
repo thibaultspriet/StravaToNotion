@@ -11,7 +11,10 @@ logger = logging.getLogger()
 
 
 def refresh_strava_token(
-    athlete_id: str, strava_client: StravaClient, database_client: DatabaseInterface
+    athlete_id: str,
+    user_email: str,
+    strava_client: StravaClient,
+    database_client: DatabaseInterface,
 ) -> None:
     """
     Refresh the strava tokens of an athlete.
@@ -19,6 +22,7 @@ def refresh_strava_token(
     Generate new tokens with the Strava API and stores the new tokens in the database
 
     :param athlete_id:
+    :param user_email:
     :param strava_client:
     :param database_client:
     :return:
@@ -27,7 +31,7 @@ def refresh_strava_token(
     if token is not None:
         logger.debug(f"refreshing token of athlete {athlete_id}")
         token["expires_at"] = str(token["expires_at"])
-        database_client.update_strava_credentials(athlete_id, token)
+        database_client.update_strava_credentials(athlete_id, user_email, token)
     else:
         logger.debug(f"token of athlete {athlete_id} still valid")
 
